@@ -1,18 +1,21 @@
 from datetime import datetime
-from blacksheep.messages import Request, Response
 from blacksheep.server import Application
 from blacksheep.server.bindings import FromJSON
+from blacksheep.server.templating import use_templates
+from jinja2 import PackageLoader
 from uuid import uuid4
-import json
 from blockchain import Blockchain
 import bc_dataclass 
 
-app = Application()
+app = Application(show_error_details=True, debug=True)
 get = app.router.get
 post = app.router.post
 
 
 node_identifier = str(uuid4()).replace('-', '')
+
+view = use_templates(app, loader=PackageLoader("app", "templates"), enable_async=False)
+
 
 # Instantiate the Blockchain
 blockchain = Blockchain()
@@ -37,14 +40,15 @@ def mine():
     previous_hash = blockchain.hash(last_block)
     block = blockchain.new_block(proof, previous_hash)
 
-    response = json({
+    response = {
         'message': "New Block Forged",
         'index': block['index'],
         'transactions': block['transactions'],
         'proof': block['proof'],
         'previous_hash': block['previous_hash'],
-    })
-    return response, 200
+    }
+    #return response, 200
+    return view("mine", response)
   
 
 @post('/transactions/new')
@@ -59,16 +63,16 @@ def new_transaction(input: FromJSON[bc_dataclass.Transaction]):
     # Create a new Transaction
     index = blockchain.new_transaction(values['sender'], values['recipient'], values['amount'])
 
-    response = json({'message': f'Transaction will be added to Block {index}'})
+    response = {'message': f'Transaction will be added to Block {index}'}
     return response, 201
 
 
 @get('/chain')
 def full_chain():
-    response = json({
+    response = {
         'chain': blockchain.chain,
         'length': len(blockchain.chain),
-    })
+    }
     return response, 200
 
 
@@ -83,10 +87,10 @@ def register_nodes(request: FromJSON[bc_dataclass.nodes]):
     for node in nodes:
         blockchain.register_node(node)
 
-    response = json({
+    response = {
         'message': 'New nodes have been added',
         'total_nodes': list(blockchain.nodes),
-    })
+    }
     return response, 201
 
 
@@ -95,19 +99,19 @@ def consensus():
     replaced = blockchain.resolve_conflicts()
 
     if replaced:
-        response = json({
+        response = {
             'message': 'Our chain was replaced',
             'new_chain': blockchain.chain
-        })
+        }
     else:
-        response = json({
+        response = {
             'message': 'Our chain is authoritative',
             'chain': blockchain.chain
-        })
+        }
 
     return response, 200
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+    app.run(host='127.0.0.1', port=5000)
 

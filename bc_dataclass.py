@@ -7,6 +7,7 @@ class Transaction:
     recipient: str
     amount: int
 
+
 @dataclass
 class node:
     node: str
