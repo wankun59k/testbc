@@ -1,6 +1,6 @@
 from datetime import datetime
 from blacksheep.server import Application
-from blacksheep.server.bindings import FromJSON
+from blacksheep.server.bindings import FromJSON, FromForm
 from blacksheep.server.templating import use_templates
 from jinja2 import PackageLoader
 from uuid import uuid4
@@ -52,18 +52,19 @@ def mine():
   
 
 @post('/transactions/new')
-def new_transaction(input: FromJSON[bc_dataclass.Transaction]):
+def new_transaction(input: FromForm[bc_dataclass.Transaction]):
     values = input.value
 
     # Check that the required fields are in the POST'ed data
     required = ['sender', 'recipient', 'amount']
-    if not all(k in values.keys() for k in required):
+    if not all(k in dir(values) for k in required):
         return 'Missing values', 400
 
     # Create a new Transaction
-    index = blockchain.new_transaction(values['sender'], values['recipient'], values['amount'])
+    #index = blockchain.new_transaction(values.sender, values.recipient, values.amount)
+    index = 0
 
-    response = {'message': f'Transaction will be added to Block {index}'}
+    response = {'message': 'Transaction will be added to Block {}'.format(index)}
     return response, 201
 
 
@@ -111,6 +112,10 @@ def consensus():
 
     return response, 200
 
+
+@get("/")
+def home():
+    return view("mine", {"example": "Hello", "foo": "World"})
 
 if __name__ == '__main__':
     app.run(host='127.0.0.1', port=5000)
