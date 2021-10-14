@@ -2,10 +2,6 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="description" content="Example.">
-  <script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 </head>
 <body>
 
@@ -24,7 +20,7 @@
   </div>
 
   <div id='new_transaction'>
-    <form action="/transactions/new" method="post"> 
+    <form action="/transaction" method="post"> 
     <p>sender:
       <input name='sender' value="{{transactions[0].sender}}" readonly></p>
     <p>recipient:

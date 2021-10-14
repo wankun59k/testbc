@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+</head>
+<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+<script>
+let ipaddr = [];
+$.getJSON('https://ipinfo.io', res => console.log(res.ip));
+</script>
+<body>
+    <h1>NFT mining</h1>
+    We got {{length}} blocks in current transaction.
+    Put your name here and commit! button to commit transaction..
+    <form action="/nodes/register" method="post"> 
+        <input name='node' value=ipaddr></p>
+
+        <input type="submit" value="commit!">
+    </form>
+    <div>
+    {{chain}}
+    </div>
+    
+</body>
+</html>

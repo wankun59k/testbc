@@ -51,7 +51,7 @@ def mine():
     return view("mine", response)
   
 
-@post('/transactions/new')
+@post('/transaction')
 def new_transaction(input: FromForm[bc_dataclass.Transaction]):
     values = input.value
 
@@ -61,11 +61,11 @@ def new_transaction(input: FromForm[bc_dataclass.Transaction]):
         return 'Missing values', 400
 
     # Create a new Transaction
-    #index = blockchain.new_transaction(values.sender, values.recipient, values.amount)
-    index = 0
+    index = blockchain.new_transaction(values.sender, values.recipient, values.amount)
 
     response = {'message': 'Transaction will be added to Block {}'.format(index)}
-    return response, 201
+    #return response, 201
+    return view("transaction", response)
 
 
 @get('/chain')
@@ -73,27 +73,45 @@ def full_chain():
     response = {
         'chain': blockchain.chain,
         'length': len(blockchain.chain),
+        'nodes': blockchain
     }
-    return response, 200
+    #return response, 201
+    return view("chain", response)
 
+
+# @post('/nodes/register')
+# def register_nodes(input: FromForm[bc_dataclass.nodes]):
+#     values = input.value
+#     nodes = values.nodes
+#     if nodes is None:
+#         return "Error: Please supply a valid list of nodes", 400
+# 
+#     for node in nodes:
+#         blockchain.register_node(node)
+# 
+#     response = {
+#         'message': 'New nodes have been added',
+#         'total_nodes': list(blockchain.nodes),
+#     }
+#     #return response, 201
+#     return view("register", response)
 
 @post('/nodes/register')
-def register_nodes(request: FromJSON[bc_dataclass.nodes]):
-    values = request.value
-
-    nodes = values.get('nodes')
+def register_nodes(input: FromForm[bc_dataclass.node]):
+    values = input.value
+    nodes = values.node
     if nodes is None:
         return "Error: Please supply a valid list of nodes", 400
 
-    for node in nodes:
-        blockchain.register_node(node)
+    blockchain.register_node(nodes)
+    print(blockchain.nodes)
 
     response = {
         'message': 'New nodes have been added',
         'total_nodes': list(blockchain.nodes),
     }
-    return response, 201
-
+    #return response, 201
+    return view("register", response)
 
 @get('/nodes/resolve')
 def consensus():
@@ -110,12 +128,13 @@ def consensus():
             'chain': blockchain.chain
         }
 
-    return response, 200
+    #return response, 200
+    return  view("resolve", {'message':response['message'], 'chains':blockchain.chain})
 
 
 @get("/")
 def home():
-    return view("mine", {"example": "Hello", "foo": "World"})
+    return view("home","")
 
 if __name__ == '__main__':
     app.run(host='127.0.0.1', port=5000)
