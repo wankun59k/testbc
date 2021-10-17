@@ -6,6 +6,8 @@ from jinja2 import PackageLoader
 from uuid import uuid4
 from blockchain import Blockchain
 import bc_dataclass 
+from blacksheep.messages import Request, Response
+from blacksheep.server.responses import json
 
 app = Application(show_error_details=True, debug=True)
 get = app.router.get
@@ -14,15 +16,14 @@ post = app.router.post
 
 node_identifier = str(uuid4()).replace('-', '')
 
-view = use_templates(app, loader=PackageLoader("app", "templates"), enable_async=False)
-
 
 # Instantiate the Blockchain
 blockchain = Blockchain()
 
 
 @get('/mine')
-def mine():
+def mine() -> Response:
+    
     # We run the proof of work algorithm to get the next proof...
     last_block = blockchain.last_block
     last_proof = last_block['proof']
@@ -40,15 +41,19 @@ def mine():
     previous_hash = blockchain.hash(last_block)
     block = blockchain.new_block(proof, previous_hash)
 
-    response = {
+    response = json({
         'message': "New Block Forged",
         'index': block['index'],
         'transactions': block['transactions'],
         'proof': block['proof'],
         'previous_hash': block['previous_hash'],
-    }
-    #return response, 200
-    return view("mine", response)
+        'test': 'test'
+        }) 
+    response.add_header(b"Access-Control-Allow-Origin", b"*")
+    #Access-Control-Allow-Origin: https://trusted-one.co.jp
+    #Access-Control-Allow-Credentials: true
+
+    return response
   
 
 @post('/transaction')
@@ -64,8 +69,8 @@ def new_transaction(input: FromForm[bc_dataclass.Transaction]):
     index = blockchain.new_transaction(values.sender, values.recipient, values.amount)
 
     response = {'message': 'Transaction will be added to Block {}'.format(index)}
-    #return response, 201
-    return view("transaction", response)
+    return response, 201
+    #return view("transaction", response)
 
 
 @get('/chain')
@@ -75,8 +80,8 @@ def full_chain():
         'length': len(blockchain.chain),
         'nodes': blockchain
     }
-    #return response, 201
-    return view("chain", response)
+    return response, 201
+    #return view("chain", response)
 
 
 # @post('/nodes/register')
@@ -110,8 +115,8 @@ def register_nodes(input: FromForm[bc_dataclass.node]):
         'message': 'New nodes have been added',
         'total_nodes': list(blockchain.nodes),
     }
-    #return response, 201
-    return view("register", response)
+    return response, 201
+    #return view("register", response)
 
 @get('/nodes/resolve')
 def consensus():
@@ -128,13 +133,13 @@ def consensus():
             'chain': blockchain.chain
         }
 
-    #return response, 200
-    return  view("resolve", {'message':response['message'], 'chains':blockchain.chain})
+    return response, 200
+    #return  view("resolve", {'message':response['message'], 'chains':blockchain.chain})
 
 
 @get("/")
 def home():
-    return view("home","")
+    return view("testview.html","")
 
 if __name__ == '__main__':
     app.run(host='127.0.0.1', port=5000)

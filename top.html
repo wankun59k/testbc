@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>Vue.js test</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
+
+</head>
+  <div id="main">
+
+    <div class="container">
+      <div class="row">
+        <!-- 入力フィールド -->
+        <div class="col-xs-6">
+          <h3>データ入力</h3>
+          <!-- 入力コンポーネント 親のonAddへイベント発火 -->
+          <data-input @on-add="get_mine"></data-input>
+          <h3>データリスト</h3>
+          <table class="table">
+              <div v-for="item in list">
+                <p>message:{{item.message}}</p>
+                <p>index:{{item.index}}</p>
+                <!-- p>transactions:{{item.transactions}}</p -->
+                <p>proof:{{item.proof}}</p>
+                <p>previous_hash:{{item.previous_hash}}</p>
+                <p>transactions-sender:{{item.transactions[0].sender}}</p>
+                <p>transactions-recipient:{{item.transactions[0].recipient}}</p>
+                <p>transactions-amount:{{item.transactions[0].amount}}</p>
+                
+              </div>
+          </table>
+        </div>
+
+        <!-- 検索フィールド -->
+        <div class="col-xs-6">
+
+          <h3>データ検索</h3>
+
+          <search-field @on-search="onSearch"></search-field>
+
+          <h3>検索結果リスト</h3>
+
+          <table class="table">
+            <thead>
+              <tr>
+                <td>ID</td>
+                <td>Name</td>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="item in searchResult">
+                <td>{{item.id}}</td>
+                <td>{{item.name}}</td>
+              </tr>
+            </tbody>
+          </table>
+
+        </div>
+
+      </div>
+    </div>
+
+
+  </div>
+  
+    <template id="data-input">
+      <button type="button" class="btn btn-default" @click="mine">get</button>
+    </template>
+
+  <template id="search-field">
+    <div class="form-inline">
+      <div class="form-group">
+        <input type="text" class="form-control" placeholder="id" v-model="id">
+      </div>
+      <div class="form-group">
+        <input type="text" class="form-control" placeholder="name" v-model="name">
+      </div>
+      <button type="button" class="btn btn-default" @click="search">
+        post
+      </button>
+    </div>
+  </template>
+  
+<script>
+ Vue.component ('data-input', {
+  template: '#data-input',
+  data () {
+    return {
+        message: '', 
+        index: '',
+        transactions: [
+            {
+                sender: '',
+                recipient: '',
+                amount: '',
+            }
+        ],
+        proof: '',
+        previous_hash: '',
+
+        sender: '',
+        recipient: '',
+        amount: '',
+
+    }
+  },
+  methods: {
+    mine () {
+        axios.get('http://127.0.0.1:5000/mine').then(res=>{
+        console.log(res)
+        const {message, index, transactions, proof, previous_hash} = res.data
+        // 空入力を時、空振り
+        if (message === '') return
+        // 親のon-addイベントへ伝達
+        this.$emit('on-add', {
+            message: message, 
+            index: index,
+            transactions: transactions,
+            proof: proof,
+            previous_hash: previous_hash,
+        })
+    }).catch(err=>{
+        console.log(err)
+    })
+    // 入力データリセット
+    this.message = '', 
+    this.index = ''
+    this.transactions = ''
+    this.proof = ''
+    this.previous_hash = ''
+    }
+  }
+})
+
+// 検索コンポーネント
+Vue.component ('search-field', {
+
+    template: '#search-field',
+
+  data () {
+    return {
+      id: '',
+      name: ''
+    }
+  },
+
+  methods: {
+    search () {
+      const {id, name} = this
+      // どれか空なら実行しない
+      if (id === '' && name === '') return
+      // 親のon-addイベントへ伝達
+      this.$emit('on-search', {id: id, name: name})
+    }
+  }
+})
+
+new Vue({
+
+    el: '#main',
+
+    data () {
+    
+    return {
+      // メインのデータリスト
+    list: [{
+        message: '', 
+        index: '',
+        transactions: [
+        {
+                sender: '',
+                recipient: '',
+                amount: '',
+            }
+        ],
+        proof: '',
+        previous_hash: '',
+    }],
+      searchResult: [],
+    }},
+
+    methods: {
+    get_mine (data) {
+            this.list[0].message = data.message
+            this.list[0].index = data.index
+            this.list[0].transactions = data.transactions
+            this.list[0].proof = data.proof
+            this.list[0].previous_hash = data.previous_hash
+            console.log(this.list[0].transactions)
+    },
+
+    onSearch (data) {
+      // 結果をリセット
+      this.searchResult =  []
+
+      const {id, name} = data
+      let result = []
+
+      // 検索
+      this.list.forEach(elm => {
+        if (elm.id === id || elm.name === name) {
+          result.push(elm)
+        }
+      })
+      this.searchResult = result
+    }
+  }
+})
+
+
+</script>
+</html>
