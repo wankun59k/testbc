@@ -14,10 +14,9 @@
       <div class="row">
         <!-- 入力フィールド -->
         <div class="col-xs-6">
-          <h3>データ入力</h3>
+          <h3>create NFT</h3>
           <!-- 入力コンポーネント 親のonAddへイベント発火 -->
-          <data-input @on-add="get_mine"></data-input>
-          <h3>データリスト</h3>
+          <start_mining @on-add="get_mine"></start_mining>
           <table class="table">
               <div v-for="item in list">
                 <p>message:{{item.message}}</p>
@@ -25,67 +24,48 @@
                 <!-- p>transactions:{{item.transactions}}</p -->
                 <p>proof:{{item.proof}}</p>
                 <p>previous_hash:{{item.previous_hash}}</p>
-                <p>transactions-sender:{{item.transactions[0].sender}}</p>
-                <p>transactions-recipient:{{item.transactions[0].recipient}}</p>
+                <p>transactions-valid:{{item.transactions[0].sender}}</p>
+                <p>transactions-sender_token:{{item.transactions[0].recipient}}</p>
                 <p>transactions-amount:{{item.transactions[0].amount}}</p>
-                
+                <props v-bind:sender="item.transactions[0].recipient" ></props>
+                <props v-bind:amount="item.transactions[0].amount"> </props>
               </div>
           </table>
         </div>
-
+  
         <!-- 検索フィールド -->
         <div class="col-xs-6">
+          <h3>TRANSCTION START</h3>
+          <!-- p>sender:{{sender}}</p>
+          <p>amount:{{amount}}</p -->
+          <!-- transaction @on-search="exec_trans"></transaction -->
+          <button type="button" class="btn btn-default" @click="exec_trans">post</button>
+          <h3>node informations</h3>
+              <div v-for="item in searchResult">
+                <p>added block index:{{item.added_block}}</p>
+                <p>chain:{{item.chain}}</p>
+                <p>length:{{item.length}}</p>
+                <p>nodes:{{item.nodes}}</p>
 
-          <h3>データ検索</h3>
-
-          <search-field @on-search="onSearch"></search-field>
-
-          <h3>検索結果リスト</h3>
-
-          <table class="table">
-            <thead>
-              <tr>
-                <td>ID</td>
-                <td>Name</td>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="item in searchResult">
-                <td>{{item.id}}</td>
-                <td>{{item.name}}</td>
-              </tr>
-            </tbody>
-          </table>
-
+              </div>
         </div>
-
       </div>
     </div>
-
 
   </div>
-  
-    <template id="data-input">
-      <button type="button" class="btn btn-default" @click="mine">get</button>
-    </template>
+    
+  <template id="start_mining">
+    <button type="button" class="btn btn-default" @click="mine">get</button>
+  </template>
 
-  <template id="search-field">
-    <div class="form-inline">
-      <div class="form-group">
-        <input type="text" class="form-control" placeholder="id" v-model="id">
-      </div>
-      <div class="form-group">
-        <input type="text" class="form-control" placeholder="name" v-model="name">
-      </div>
-      <button type="button" class="btn btn-default" @click="search">
-        post
-      </button>
-    </div>
+  <template id="transaction">
+      <button type="button" class="btn btn-default" @click="trans">post</button>
   </template>
   
 <script>
- Vue.component ('data-input', {
-  template: '#data-input',
+
+ Vue.component ('start_mining', {
+  template: '#start_mining',
   data () {
     return {
         message: '', 
@@ -99,11 +79,6 @@
         ],
         proof: '',
         previous_hash: '',
-
-        sender: '',
-        recipient: '',
-        amount: '',
-
     }
   },
   methods: {
@@ -131,40 +106,54 @@
     this.proof = ''
     this.previous_hash = ''
     }
-  }
+  },
+
 })
 
-// 検索コンポーネント
-Vue.component ('search-field', {
 
-    template: '#search-field',
+Vue.component ('transaction', {
+
+  template: '#transaction',
 
   data () {
     return {
-      id: '',
-      name: ''
+      added_block: '',
+      chain: '',
+      length: '',
+      nodes: '',
     }
   },
 
   methods: {
-    search () {
-      const {id, name} = this
-      // どれか空なら実行しない
-      if (id === '' && name === '') return
-      // 親のon-addイベントへ伝達
-      this.$emit('on-search', {id: id, name: name})
+    trans () {
+        axios.post('http://127.0.0.1:5000/transaction',{
+          sender: sender,
+          recipient: recipient,
+          amount: amount
+        }).then(res=>{
+          console.log(res)
+          if (added_block === '') return
+          // 親のon-searchイベントへ伝達
+          this.$emit('on-search', {
+            added_block: added_block, 
+            chain: chain,
+            length: length,
+            nodes: nodes,
+          })
+    }).catch(err=>{
+        console.log(err)
+    })
+
     }
   }
 })
 
 new Vue({
 
-    el: '#main',
-
-    data () {
-    
+  el: '#main',
+  
+  data () {
     return {
-      // メインのデータリスト
     list: [{
         message: '', 
         index: '',
@@ -178,8 +167,17 @@ new Vue({
         proof: '',
         previous_hash: '',
     }],
-      searchResult: [],
-    }},
+    
+    searchResult: [{
+      added_block: '',
+      chain: '',
+      length: '',
+      nodes: '',
+    }],
+
+
+    }
+  },
 
     methods: {
     get_mine (data) {
@@ -188,24 +186,35 @@ new Vue({
             this.list[0].transactions = data.transactions
             this.list[0].proof = data.proof
             this.list[0].previous_hash = data.previous_hash
-            console.log(this.list[0].transactions)
+    },
+    
+    exec_trans (data) {
+      axios.post('http://127.0.0.1:5000/transaction',{
+          sender: this.list[0].transactions[0].recipient,
+          recipient: "sender HTTP",
+          amount: this.list[0].transactions[0].amount
+        }).then(res=>{
+          console.log(res)
+          if (added_block === '') return
+          // 親のon-searchイベントへ伝達
+          this.$emit('on-search', {
+            added_block: added_block, 
+            chain: chain,
+            length: length,
+            nodes: nodes,
+          })
+    }).catch(err=>{
+        console.log(err)
+    })
+
+        //    this.list[0].added_block = data.added_block
+        //    this.list[0].chain = data.chain
+        //    this.list[0].length = data.length
+        //    this.list[0].nodes = data.nodes
+        //    console.log(this.list)
     },
 
-    onSearch (data) {
-      // 結果をリセット
-      this.searchResult =  []
 
-      const {id, name} = data
-      let result = []
-
-      // 検索
-      this.list.forEach(elm => {
-        if (elm.id === id || elm.name === name) {
-          result.push(elm)
-        }
-      })
-      this.searchResult = result
-    }
   }
 })
 
