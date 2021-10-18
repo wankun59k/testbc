@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import List
 
 @dataclass
@@ -11,6 +11,7 @@ class Transaction:
         self.recipient = recipient
         self.amount = amount
 
+
 @dataclass
 class node:
     node: str
@@ -20,6 +21,5 @@ class node:
 
 @dataclass
 class nodes:
-    nodes: List[node]
-    def __init__(self, nodes:List[node]) -> None:
-        self.nodes = nodes
+    nodes: List[node] = field(default_factory=list)
+  

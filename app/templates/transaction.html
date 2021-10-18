@@ -4,12 +4,33 @@
   <meta charset="utf-8">
 </head>
 <body>
+
     <h1>NFT mining</h1>
-    <form action="/chain" method="get"> 
-        {{message}}
-        <p>press submit button and set nodes to commit transaction..<p>
-        <input type="submit" value="submit">
+    {{message}}
+    We got {{length}} blocks in current transaction.
+    Put your name here and commit! button to commit transaction..
+    <form action="/nodes/register" method="post"> 
+      <input name='node' > 
+      <input type="submit" value="commit!">
     </form>
-    
+    <div>
+    {% for item in chain %}
+    <tbody>
+      <p>##########################################</p>
+      <p>index: {{ item.index }}</p>
+      <p>timestamp:{{ item.timestamp }}</p>
+      <p>proof:{{ item.proof }}</p>
+      <p>previous_hash:{{ item.previous_hash }}</p>
+    <tr>
+      <p>transactions*************{% for tx in item.transactions %}</p>
+      <p>transaction-sender:{{tx.sender}}</p>
+      <p>transaction-recipient:{{tx.recipient}}</p>
+      <p>transaction-amount:{{tx.amount}}</p>
+      <p>**********************</p>
+      {% endfor %}
+    </tr>
+    </tbody>
+    {% endfor %}
+    </div>
 </body>
 </html>

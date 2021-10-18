@@ -22,9 +22,9 @@
   <div id='new_transaction'>
     <form action="/transaction" method="post"> 
     <p>sender:
-      <input name='sender' value="{{transactions[0].sender}}" readonly></p>
+      <input name='sender' value="{{transactions[0].recipient}}" readonly></p>
     <p>recipient:
-      <input name='recipient' value="{{transactions[0].recipient}}" readonly></p>
+      <input name='recipient' value="target host name"></p>
     <p>amount:
       <input name='amount' value="{{transactions[0].amount}}" readonly></p>
     <button type="submit">send</button>
