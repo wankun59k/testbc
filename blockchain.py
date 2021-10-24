@@ -5,6 +5,11 @@ import asyncio
 from urllib.parse import urlparse
 import aiohttp
 import requests
+import socket
+import logging
+from collections import OrderedDict as odict
+
+Logger = logging.getLogger(__name__)
 
 class Blockchain(object):
     def __init__(self):
@@ -24,13 +29,13 @@ class Blockchain(object):
         :return: <dict> New Block
         """
 
-        block = {
-            'index': len(self.chain) + 1,
-            'timestamp': time(),
-            'transactions': self.current_transactions,
-            'proof': proof,
-            'previous_hash': previous_hash or self.hash(self.chain[-1]),
-        }
+        block = odict([
+            ('index', len(self.chain) + 1),
+            ('timestamp', time()),
+            ('transactions', self.current_transactions),
+            ('proof', proof),
+            ('previous_hash', previous_hash or self.hash(self.chain[-1]))
+        ])
 
         # Reset the current list of transactions
         self.current_transactions = []
@@ -47,11 +52,12 @@ class Blockchain(object):
         :param amount: <int> Amount
         :return: <int> The index of the Block that will hold this transaction
         """
-        self.current_transactions.append({
-            'sender': sender,
-            'recipient': recipient,
-            'amount': amount,
-        })
+        tx = odict([
+                ('sender', sender),
+                ('recipient', recipient),
+                ('amount', amount)
+            ])
+        self.current_transactions.append(tx)
 
         return self.last_block['index'] + 1
 
@@ -59,6 +65,15 @@ class Blockchain(object):
     @property
     def last_block(self):
         return self.chain[-1]
+
+
+    @staticmethod
+    def get_host():
+        try:
+            return socket.gethostbyname(socket.gethostname())
+        except Exception as ex:
+            Logger.error({'action':'get_host', 'error': ex})
+            return '127.0.0.1'
 
 
     @staticmethod
@@ -122,10 +137,9 @@ class Blockchain(object):
         """
 
         last_block = chain[0]
-        current_index = 1
-
-        while current_index < len(chain):
-            block = chain[current_index]
+        idx = 1
+        while idx < len(chain):
+            block = chain[idx]
             # Check that the hash of the block is correct
             if block['previous_hash'] != self.hash(last_block):
                 return False
@@ -135,7 +149,7 @@ class Blockchain(object):
                 return False
 
             last_block = block
-            current_index += 1
+            idx += 1
 
         return True
 
@@ -153,7 +167,7 @@ class Blockchain(object):
         response = None
 
         # We're only looking for chains longer than ours
-        max_length = len(self.chain)
+        length_mychain = len(self.chain)
 
         # Grab and verify the chains from all the nodes in our network
         for node in neighbours:
@@ -164,8 +178,8 @@ class Blockchain(object):
             #         length = response['length']
             #         chain = response['chain']
             #         # Check if the length is longer and the chain is valid
-            #         if length > max_length and self.valid_chain(chain):
-            #             max_length = length
+            #         if length > length_mychain and self.valid_chain(chain):
+            #             length_mychain = length
             #             new_chain = chain
             try:
                 response = requests.get(url)
@@ -177,13 +191,16 @@ class Blockchain(object):
                 continue
 
             if response.status_code == 200:
-                length = response.json()['length']
-                chain = response.json()['chain']
+                #print("response is {}".format(response.json()))
+                print('response succeeded with {}'.format(url))
+                others_length = response.json()[0]['length']
+                others_chain = response.json()[0]['chain']
 
                 # Check if the length is longer and the chain is valid
-                if length > max_length and self.valid_chain(chain):
-                    max_length = length
-                    new_chain = chain
+                print('check {} > {}'.format(others_length, length_mychain))
+                if others_length > length_mychain and self.valid_chain(others_chain):
+                    length_mychain = others_length
+                    new_chain = others_chain
 
         # Replace our chain if we discovered a new, valid chain longer than ours
         if new_chain:

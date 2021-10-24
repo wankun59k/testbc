@@ -3,11 +3,9 @@ from typing import List
 
 @dataclass
 class Transaction:
-    sender: int
     recipient: str
     amount: int
-    def __init__(self, sender:int, recipient:str, amount:int) -> None:
-        self.sender = sender
+    def __init__(self, recipient:str, amount:int) -> None:
         self.recipient = recipient
         self.amount = amount
 

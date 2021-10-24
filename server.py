@@ -7,6 +7,7 @@ from uuid import uuid4
 from blockchain import Blockchain
 import bc_dataclass 
 
+
 app = Application(show_error_details=True, debug=True)
 get = app.router.get
 post = app.router.post
@@ -38,51 +39,86 @@ def mine():
 
     # Forge the new Block by adding it to the chain
     previous_hash = blockchain.hash(last_block)
-    block = blockchain.new_block(proof, previous_hash)
+    nblock = blockchain.new_block(proof, previous_hash)
 
     response = {
         'message': "New Block Forged",
-        'index': block['index'],
-        'transactions': block['transactions'],
-        'proof': block['proof'],
-        'previous_hash': block['previous_hash'],
+        'index': nblock['index'],
+        'transactions': [ {
+            'sender':tx['sender'],
+            'recipient':tx['recipient'],
+            'amount':tx['amount']
+            } for tx in nblock['transactions']],
+        'proof': nblock['proof'],
+        'previous_hash': nblock['previous_hash'],
     }
     #return response, 200
     return view("mine", response)
-  
 
-@post('/transaction')
-def new_transaction(input: FromForm[bc_dataclass.Transaction]) -> Response:
-    values = input.value
 
-    # Check that the required fields are in the POST'ed data
-    required = ['sender', 'recipient', 'amount']
-    if not all(k in dir(values) for k in required):
-        response = json({
-                'added_block': "Missing values",
-                })
-        response.add_header(b"Access-Control-Allow-Origin", b"*")
-        return response
-
-    # Create a new Transaction
-    index = blockchain.new_transaction(
-        values.sender, 
-        values.recipient, 
-        values.amount)
+@get('/transaction')
+def get_transaction():
+    response_message = 'No transactions added.'
 
     response = {
-        'message': 'Transaction will be added to Block {}'.format(index),
-        'chain': blockchain.chain,
-        'length': len(blockchain.chain),
+        'message': response_message,
+        'transactions': blockchain.current_transactions,
+        'length': len(blockchain.current_transactions),
     }
     #return response, 201
     return view("transaction", response)
 
 
+@post('/transaction')
+def new_transaction(input: FromForm[bc_dataclass.Transaction]):
+    values = input.value
+    response_message = ''
+
+    # Check that the required fields are in the POST'ed data and Create a new Transaction
+    #required = ['sender', 'recipient', 'amount']
+    required = ['recipient', 'amount']
+    if all(k in dir(values) for k in required):
+        index = blockchain.new_transaction(
+            #values.sender, 
+            node_identifier,
+            values.recipient, 
+            values.amount)
+        response_message = 'Transaction will be added to Block {}.'.format(index)
+    else:
+        response_message = 'No transactions added.'
+
+    response = {
+        'message': response_message,
+        'transactions': blockchain.current_transactions,
+        'length': len(blockchain.current_transactions),
+    }
+    #return response, 201
+    return view("transaction", response)
+
+
+@get('/chain')
+def full_chain():
+    response = {
+        'chain': blockchain.chain,
+        'length': len(blockchain.chain),
+    }
+    return response, 200
+
+
+@get('/nodes/register')
+def register_nodes():
+    response = {
+        'message': 'Please supply a valid list of nodes',
+        'total_nodes': list(blockchain.nodes),
+    }
+    #return response, 201
+    return view("register", response)
+
+
 @post('/nodes/register')
 def register_nodes(input: FromForm[bc_dataclass.node]):
     """
-    add new endorsersve
+    add new endorsers
     """
     print(input.value.node)
     values = input.value
@@ -122,7 +158,7 @@ def consensus():
 
 @get("/")
 def home():
-    return view("home","")
+    return view("mine","")
 
 if __name__ == '__main__':
     app.run(host='127.0.0.1', port=5000)

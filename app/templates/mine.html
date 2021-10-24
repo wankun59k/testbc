@@ -4,34 +4,23 @@
   <meta charset="utf-8">
 </head>
 <body>
-
   <div id="mine">
     <h1>NFT mining</h1>
     <div>
       <form action="/mine" method="get"> 
-        <h2>{{message}}</h2>
-        <p>{{index}}</p>
-        <p>{{transactions}}</p>
-        <p>{{proof}}</p>
-        <p>{{previous_hash}}</p>
+        <h2>message:{{message}}</h2>
+        <p>index:{{index}}</p>
+        <p>proof:{{proof}}</p>
+        <p>transactions:</p>
+        {% for tx in transactions %}
+        <p>tx sender:{{tx.sender}}</p>
+        <p>tx recipient:{{tx.recipient}}</p>
+        <p>tx amount:{{tx.amount}}</p>
+        {% endfor %}
+        <p>previous_hash:{{previous_hash}}</p>
         <input type="submit" value="create NFT">
       </form>
     </div>
   </div>
-
-  <div id='new_transaction'>
-    <form action="/transaction" method="post"> 
-    <p>sender:
-      <input name='sender' value="{{transactions[0].recipient}}" readonly></p>
-    <p>recipient:
-      <input name='recipient' value="target host name"></p>
-    <p>amount:
-      <input name='amount' value="{{transactions[0].amount}}" readonly></p>
-    <button type="submit">send</button>
-  </form>
-  </div>
-
-
-
 </body>
 </html>

@@ -5,9 +5,31 @@
 </head>
 <body>
     <h1>NFT mining</h1>
+    press check! button to check and resolve conflicts..
+    <form action="/nodes/resolve" method="get"> 
+        <input type="submit" value="check!">
+    </form>
     <div>status : {{message}}</div>
     <div>new chain :</div>
-    <div>{{chains}}</div>
+    <div>
+        {% for item in chains %}
+        <tbody>
+          <p>##########################################</p>
+          <p>index: {{ item.index }}</p>
+          <p>timestamp:{{ item.timestamp }}</p>
+          <p>proof:{{ item.proof }}</p>
+          <p>previous_hash:{{ item.previous_hash }}</p>
+        <tr>
+          <p>transactions*************{% for tx in item.transactions %}</p>
+          <p>transaction-sender:{{tx.sender}}</p>
+          <p>transaction-recipient:{{tx.recipient}}</p>
+          <p>transaction-amount:{{tx.amount}}</p>
+          <p>**********************</p>
+          {% endfor %}
+        </tr>
+        </tbody>
+        {% endfor %}
+    </div>
 <br>
     <div>back to mining</div>
     <div>
