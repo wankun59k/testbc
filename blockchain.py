@@ -16,6 +16,7 @@ class Blockchain(object):
         self.current_transactions = []
         self.chain = []
         self.nodes = set()
+        self.tasks_validchain_nodes = []
 
         # Create the genesis block
         self.new_block(previous_hash=1, proof=100)
@@ -129,7 +130,7 @@ class Blockchain(object):
         parsed_url = urlparse(address)
         self.nodes.add(parsed_url.netloc)
 
-    def valid_chain(self, chain):
+    async def valid_chain(self, chain):
         """
         Determine if a given blockchain is valid
         :param chain: <list> A blockchain
@@ -154,7 +155,8 @@ class Blockchain(object):
         return True
 
 
-    def resolve_conflicts(self):
+
+    async def resolve_conflicts(self):
         """
         This is our Consensus Algorithm, it resolves conflicts
         by replacing our chain with the longest one in the network.
@@ -172,35 +174,18 @@ class Blockchain(object):
         # Grab and verify the chains from all the nodes in our network
         for node in neighbours:
             url = 'http://{}/chain'.format(node)
-            # with aiohttp.ClientSession() as session:
-            #     with session.get(url) as resp:
-            #         response = resp.json()
-            #         length = response['length']
-            #         chain = response['chain']
-            #         # Check if the length is longer and the chain is valid
-            #         if length > length_mychain and self.valid_chain(chain):
-            #             length_mychain = length
-            #             new_chain = chain
-            try:
-                response = requests.get(url)
-            except requests.exceptions.InvalidURL:
-                print("invalid url :{}".format(url))
-                continue
-            except requests.exceptions.ConnectionError:
-                print("ConnectionError :{}".format(url))
-                continue
-
-            if response.status_code == 200:
-                #print("response is {}".format(response.json()))
-                print('response succeeded with {}'.format(url))
-                others_length = response.json()[0]['length']
-                others_chain = response.json()[0]['chain']
-
-                # Check if the length is longer and the chain is valid
-                print('check {} > {}'.format(others_length, length_mychain))
-                if others_length > length_mychain and self.valid_chain(others_chain):
-                    length_mychain = others_length
-                    new_chain = others_chain
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url) as resp:
+                    if not resp.status == 200:
+                        return False
+                    response = await resp.json()
+                    print(response)
+                    length = response[0]['length']
+                    chain = response[0]['chain']
+                    # Check if the length is longer and the chain is valid
+                    if length > length_mychain and await self.valid_chain(chain):
+                        length_mychain = length
+                        new_chain = chain
 
         # Replace our chain if we discovered a new, valid chain longer than ours
         if new_chain:

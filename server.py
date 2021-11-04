@@ -138,8 +138,8 @@ def register_nodes(input: FromForm[bc_dataclass.node]):
 
 
 @get('/nodes/resolve')
-def consensus():
-    replaced = blockchain.resolve_conflicts()
+async def consensus():
+    replaced = await blockchain.resolve_conflicts()
 
     if replaced:
         response = {
